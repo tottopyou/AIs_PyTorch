@@ -16,7 +16,7 @@ pip install torch torchvision
 
 ## Table of Contents
 
-- [Linear Regression](#linear-function)
+- [Linear Regression](#linear-regression)
 - [Neural Network Classification](#neural-network-classification)
 
 ---
