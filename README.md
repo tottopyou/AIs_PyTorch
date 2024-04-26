@@ -95,5 +95,6 @@ model_4 = BlobModel(input_features=2, output_features=4)
 
 ## And how it evolve during epochs
 
-![Sequence 01_5](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/540106d8-8c87-4e67-a459-637f126450f5)
+![Untitled-2](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/ede51347-31b8-46b4-ac2e-8ca3cc290ea1)
+
 
