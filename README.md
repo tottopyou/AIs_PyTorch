@@ -17,7 +17,7 @@ pip install torch torchvision
 ## Table of Contents
 
 - [Linear Regression](#linear-regression)
-- [Neural Network Classification](#neural-network-classification)
+- [Multi Classification](#multi-classification)
 
 ---
 
@@ -56,6 +56,44 @@ class LinearRegressionV2(nn.Module):
 
 ---
 
-## Neural Network Classification
+# Multi Classification
 
-Description of your neural network classification project goes here.
+This project demonstrates the implementation of a neural network for multi-class classification using PyTorch.
+
+## Overview
+
+Multi-class classification is a task where we aim to classify data points into multiple classes based on their features. In this project, we generate synthetic data blobs with multiple classes and train a neural network to classify them.
+
+## Data Generation
+
+We generate synthetic blob data using the `make_blobs` function from scikit-learn. The data consists of 1000 samples with 2 features and 4 clusters (classes). Each sample is assigned a label indicating its cluster.
+
+## Model Architecture
+
+We define a neural network model for multi-class classification. The model consists of three fully connected layers with ReLU activation functions.
+
+```python
+class BlobModel(nn.Module):
+    def __init__(self, input_features, output_features, hidden_units=20):
+        super().__init__()
+        self.linear_later_stack = nn.Sequential(
+            nn.Linear(in_features=input_features, out_features=hidden_units),
+            nn.ReLU(),
+            nn.Linear(in_features=hidden_units, out_features=hidden_units),
+            nn.ReLU(),
+            nn.Linear(in_features=hidden_units, out_features=output_features)
+        )
+    def forward(self,x):
+        return self.linear_later_stack(x)
+
+model_4 = BlobModel(input_features=2, output_features=4)
+```
+
+## Here is how it looks in the graph 
+
+![image](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/02a19418-b0ea-47ef-9218-3f1ba1956183)
+
+## And how it evolve during epochs
+
+![Sequence 01_5](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/540106d8-8c87-4e67-a459-637f126450f5)
+
