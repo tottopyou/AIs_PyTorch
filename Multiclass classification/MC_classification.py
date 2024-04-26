@@ -51,7 +51,7 @@ optimizer = torch.optim.SGD(params=model_4.parameters(),
 
 torch.manual_seed(random_seed )
 
-epoches = 101
+epoches = 100
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 6))
 
