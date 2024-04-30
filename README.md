@@ -18,6 +18,7 @@ pip install torch torchvision
 
 - [Linear Regression](#linear-regression)
 - [Multi Classification](#multi-classification)
+- [Computer Vision](#computer-vision)
 
 ---
 
@@ -96,5 +97,9 @@ model_4 = BlobModel(input_features=2, output_features=4)
 ## And how it evolve during epochs
 
 ![Untitled-2](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/ede51347-31b8-46b4-ac2e-8ca3cc290ea1)
+
+---
+
+# Computer Vision
 
 
