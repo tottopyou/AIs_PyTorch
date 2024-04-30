@@ -102,4 +102,73 @@ model_4 = BlobModel(input_features=2, output_features=4)
 
 # Computer Vision
 
+This project demonstrates the implementation of a Convolutional Neural Network (CNN) for classifying FashionMNIST images using PyTorch.
+
+## Overview
+
+Computer Vision is used to classify FashionMNIST images into 10 categories. FashionMNIST is a dataset of Zalando's article images—consisting of 60,000 training examples and 10,000 test examples—intended for benchmarking machine learning models.
+
+## Data Preparation
+
+We use the FashionMNIST dataset provided by torchvision, which consists of grayscale images of clothing items. The dataset is split into a training set and a test set.
+
+## Model Architecture
+
+We define a CNN model for image classification. The model consists of two convolutional blocks followed by a fully connected classifier.
+
+```python
+class ComputerVision(nn.Module):
+    def __init__(self, input_shape: int, hidden_units: int, output_shape: int):
+        super().__init__()
+        self.block1 = nn.Sequential(
+            nn.Conv2d(in_channels=input_shape, out_channels=hidden_units, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=hidden_units, out_channels=hidden_units, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        self.block2 = nn.Sequential(
+            nn.Conv2d(hidden_units, hidden_units, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hidden_units, hidden_units, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features=hidden_units * 7 * 7, out_features=output_shape)
+        )
+
+    def forward(self, x: torch.Tensor):
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.classifier(x)
+        return x
+
+model = ComputerVision(
+    input_shape=1,
+    hidden_units=20,
+    output_shape=len(class_names))
+```
+## Training
+
+We train the CNN model using the training data. We use the Cross Entropy Loss function and Stochastic Gradient Descent (SGD) optimizer.
+
+```python
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(params=model.parameters(), lr=0.1)
+
+epochs = 10
+for epoch in tqdm(range(epochs)):
+    train_step(data_loader=train_dataloader, model=model, loss_fn=loss_fn, optimizer=optimizer, accuracy_fn=accuracy_fn)
+    test_step(data_loader=test_dataloader, model=model, loss_fn=loss_fn, accuracy_fn=accuracy_fn)
+```
+
+## Prediction of AI after training and testing
+
+![img2](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/be3eaf05-f8c0-40b8-a140-49e268475949)
+
+## AI prediction table for each type
+
+![img](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/a2e6a138-f409-4c30-9faa-f2dcf9c30ab2)
 
