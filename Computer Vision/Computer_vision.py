@@ -93,7 +93,7 @@ optimizer = torch.optim.SGD(params=model.parameters(), lr=0.1)
 
 torch.manual_seed(42)
 
-epochs = 3
+epochs = 10
 for epoch in tqdm(range(epochs)):
     print(f"Epoch: {epoch}\n---------")
     train_step(data_loader=train_dataloader,
