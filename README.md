@@ -19,6 +19,7 @@ pip install torch torchvision
 - [Linear Regression](#linear-regression)
 - [Multi Classification](#multi-classification)
 - [Computer Vision](#computer-vision)
+- [Creating Human Face](#creating-human-face)
 
 ---
 
@@ -171,4 +172,8 @@ for epoch in tqdm(range(epochs)):
 ## AI prediction table for each type
 
 ![img](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/a2e6a138-f409-4c30-9faa-f2dcf9c30ab2)
+
+---
+
+# Creating Human Face
 
