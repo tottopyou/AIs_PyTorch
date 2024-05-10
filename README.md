@@ -270,6 +270,104 @@ During training, both real and fake images are periodically saved to visualize t
 | ![fake_samples_epoch_000](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/1d4ba4a8-dec9-4b9b-845d-6244f568de59) | ![fake_samples_epoch_004](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/87f81d08-9b2b-42c4-a103-13317fbd3b60) | ![fake_samples_epoch_009](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/c4afd0b7-adfc-450e-ac9b-852b11a00254) |
 
 ---
+
 # Text To Image
+
+## Overview
+
+The Text To Image Diffusion Model is a deep learning architecture designed to generate images from textual descriptions. It combines a pretrained text encoder and image decoder to produce realistic images based on input text.
+
+## Model Architecture
+
+The model architecture consists of two main components:
+
+1. **Text Encoder**: Responsible for encoding textual descriptions into a latent space representation.
+2. **Image Decoder**: Takes the latent space representation from the text encoder and generates images.
+
+### Text Encoder
+
+```python
+import torch
+import torch.nn as nn
+
+class TextEncoder(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim):
+        super(TextEncoder, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.rnn = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
+        
+    def forward(self, text):
+        text = text.to(self.embedding.weight.device).long()
+        embedded = self.embedding(text)
+        _, (hidden, _) = self.rnn(embedded)
+        return hidden.squeeze(0)
+
+vocab_size = 10000
+embedding_dim = 100
+hidden_dim = 256
+
+text_encoder = TextEncoder(vocab_size, embedding_dim, hidden_dim)
+torch.save(text_encoder, "pretrained_text_encoder.pth")
+```
+### Image Decoder
+
+```python
+import torch
+import torch.nn as nn
+
+class ImageDecoder(nn.Module):
+    def __init__(self, latent_dim, image_channels):
+        super(ImageDecoder, self).__init__()
+        self.fc = nn.Linear(latent_dim, 64 * 64 * image_channels)
+        self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(image_channels, 64, 4, 2, 1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(64, 32, 4, 2, 1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(32, 3, 4, 2, 1),
+            nn.Tanh()
+        )
+        
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.view(-1, 256, 4, 4)
+        x = self.deconv(x)
+        return x
+
+latent_dim = 256
+image_channels = 3
+
+image_decoder = ImageDecoder(latent_dim, image_channels)
+torch.save(image_decoder, "pretrained_image_decoder.pth")
+```
+
+### Training Process
+
+```python
+epochs = 10
+for epoch in range(epochs):
+    for i, target_images in enumerate(data_loader):
+        target_images = [img.to(device) for img in target_images]
+
+        optimizer.zero_grad()
+
+        text = "a dog sitting on a mat"
+        text_tensor = get_tensor_from_the_text(text).to(device)
+
+        generated_images = model(text_tensor)
+
+        target_images = torch.stack(target_images).view(-1, 3, 64, 64)
+
+        loss = criterion(generated_images, target_images)
+
+        loss.backward()
+        optimizer.step()
+```
+
+### Dataset
+
+The model is trained on the COCO dataset, which contains a large collection of images paired with textual descriptions.
 
 
