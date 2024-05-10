@@ -20,6 +20,7 @@ pip install torch torchvision
 - [Multi Classification](#multi-classification)
 - [Computer Vision](#computer-vision)
 - [Creating Human Face](#creating-human-face)
+- [Text To Image](#text-to-image)
 
 ---
 
@@ -268,5 +269,7 @@ During training, both real and fake images are periodically saved to visualize t
 | ------- | ------- | -------- |
 | ![fake_samples_epoch_000](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/1d4ba4a8-dec9-4b9b-845d-6244f568de59) | ![fake_samples_epoch_004](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/87f81d08-9b2b-42c4-a103-13317fbd3b60) | ![fake_samples_epoch_009](https://github.com/tottopyou/AIs_PyTorch/assets/110258834/c4afd0b7-adfc-450e-ac9b-852b11a00254) |
 
+---
+# Text To Image
 
 
