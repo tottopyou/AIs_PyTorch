@@ -5,7 +5,9 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import CocoCaptions
 import os
+import torchvision.utils as vutils
 from PIL import Image
+from tqdm import tqdm
 from text_to_tensor import get_tensor_from_the_text
 from text_encoder import TextEncoder
 from image_decoder import ImageDecoder
@@ -35,63 +37,58 @@ if not os.path.exists(coco_dir):
     print("COCO dataset not found. Please download it manually from https://cocodataset.org/#download.")
     exit()
 
-coco_dataset = CocoCaptions(root=coco_dir, annFile=coco_dir + '/annotations/captions_train2017.json',
-                            transform=transforms.ToTensor())
+transform = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+])
+
+coco_dataset = CocoCaptions(root=os.path.join(coco_dir, 'train2017'),
+                            annFile=os.path.join(coco_dir, 'annotations', 'captions_train2017.json'),
+                            transform=transform)
 
 class CustomDataset(Dataset):
-    def __init__(self, text_tensor, coco_dataset):
-        self.text_tensor = text_tensor
+    def __init__(self, coco_dataset):
         self.coco_dataset = coco_dataset
 
     def __getitem__(self, index):
-        _, caption = self.coco_dataset[index]
-        image = self.coco_dataset.get_image(index)
-        return self.text_tensor, image
+        image, _ = self.coco_dataset[index]
+        return image
 
     def __len__(self):
         return len(self.coco_dataset)
 
-
-# Assuming you have the text tensor ready
-text = "a dog sitting on a mat"
-text_tensor = get_tensor_from_the_text(text).to(device)
-
-custom_dataset = CustomDataset(text_tensor, coco_dataset)
-data_loader = DataLoader(custom_dataset, batch_size=32, shuffle=True)
+custom_dataset = CustomDataset(coco_dataset)
+data_loader = DataLoader(custom_dataset, batch_size=64, shuffle=True, num_workers=4)
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 epochs = 10
-for epoch in range(epochs):
-    for text_tensor_batch, target_images in data_loader:
-        print("Batch shape:", text_tensor_batch.shape)
-        print("Batch size:", len(text_tensor_batch))
-        print("Tensor shape:",
-              text_tensor_batch[0].shape)
-        print("Tensor size:", text_tensor_batch[0].size())
+print(len(data_loader))
 
-        print("Number of dimensions:", text_tensor_batch[0].dim())
+output_dir = "results"
+if __name__ == '__main__':
+    for epoch in range(epochs):
+        with tqdm(total=len(data_loader), desc=f'Epoch {epoch + 1}/{epochs}', unit='batch') as pbar:
+            for i, target_images in enumerate(data_loader):
+                target_images = [img.to(device) for img in target_images]
 
-        for tensor in text_tensor_batch:
-            print("Tensor shape:", tensor.shape)
-            print("Tensor size:", tensor.size())
-            print("Number of dimensions:", tensor.dim())
-            text_tensor = text_tensor.to(device)
+                optimizer.zero_grad()
 
-            optimizer.zero_grad()
+                text = "a dog sitting on a mat"
+                text_tensor = get_tensor_from_the_text(text).to(device)
 
-            generated_images = model(text_tensor)
+                generated_images = model(text_tensor)
 
-            target_images = target_images.to(device)
-            target_images = target_images.view(-1, 3, 64, 64)
+                target_images = torch.stack(target_images).view(-1, 3, 64, 64)
 
-            # Compute the loss
-            loss = criterion(generated_images, target_images)
+                loss = criterion(generated_images, target_images)
 
-            # Backward pass and optimize
-            loss.backward()
-            optimizer.step()
+                loss.backward()
+                optimizer.step()
 
-            # Print statistics
-            print(f"Epoch [{epoch + 1}/{epochs}], Batch Loss: {loss.item():.4f}")
+                pbar.update(1)
+
+                if i % 1000 == 0:
+                    print(f"Epoch [{epoch + 1}/{epochs}], Batch Loss: {loss.item():.4f}")
+                    vutils.save_image(generated_images, os.path.join(output_dir, f"generated_epoch_{epoch}_batch_{i}.png"))

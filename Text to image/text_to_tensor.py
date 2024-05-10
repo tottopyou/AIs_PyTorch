@@ -3,6 +3,10 @@ import torch.nn as nn
 
 
 def get_tensor_from_the_text (text):
+
+    seed = 42
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed) if torch.cuda.is_available() else None
     class TextEncoder(nn.Module):
         def __init__(self, vocab_size, embedding_dim, hidden_dim):
             super(TextEncoder, self).__init__()
@@ -11,30 +15,22 @@ def get_tensor_from_the_text (text):
 
         def forward(self, text):
 
-            text = text.to(self.embedding.weight.device).long()  # Move to the same device as embedding
+            text = text.to(self.embedding.weight.device).long()
             embedded = self.embedding(text)
             _, (hidden, _) = self.rnn(embedded)
             return hidden.squeeze(0)
 
-
-            # Example usage
-    vocab_size = 10000  # Example vocab size
+    vocab_size = 10000
     embedding_dim = 100
     hidden_dim = 256
 
-    # Initialize the text encoder
     text_encoder = TextEncoder(vocab_size, embedding_dim, hidden_dim)
 
-
-    # Tokenization
-    text_tokens = text.split()  # Split text into tokens
+    text_tokens = text.split()
     token_to_index = {token: i for i, token in enumerate(text_tokens)}
-    indexed_text = [token_to_index[token] for token in text_tokens]  # Convert tokens to indices
+    indexed_text = [token_to_index[token] for token in text_tokens]
 
-    # Convert to PyTorch tensor
-    text_input = torch.tensor(indexed_text).unsqueeze(0)  # Add batch dimension
+    text_input = torch.tensor(indexed_text).unsqueeze(0)
 
-    # Forward pass
     tensor = text_encoder(text_input)
-    print(tensor)
     return tensor
