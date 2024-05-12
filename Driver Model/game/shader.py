@@ -1,5 +1,4 @@
 import pygame
-
 class shader:
     def __init__(self, surf):
 
