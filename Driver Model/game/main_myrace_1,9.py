@@ -1,7 +1,11 @@
-import pygame, sys, math, time
+import pygame
+import sys
+import math
+import time
 from shader import *
 from pygame.locals import *
 import socket
+import select
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -32,11 +36,9 @@ fenster.fill(bg)
 shade = shader(fenster)
 shade.setup((7, 7, 7))
 
-night = 0
-
 strecken = []
 a = 1
-a_zaehler = 7
+a_zaehler = 9
 
 while a == 1:
     try:
@@ -72,7 +74,8 @@ winkel_ch = 4 / 8  # change angle
 
 acceleration = 0
 brake = 0
-boom = 0
+lose = 0
+win = 0
 
 # Define raycasting parameters
 RAY_COUNT = 8
@@ -81,7 +84,7 @@ RAY_LENGTH = 200  # Maximum length of ray
 ray_distances = [RAY_LENGTH] * RAY_COUNT
 
 clock = pygame.time.Clock()
-fps = 60
+fps = 120
 time_ = 0
 
 x = 1
@@ -163,9 +166,6 @@ while x == 1:
                 if zaehler >= len(strecken):
                     zaehler = 0
 
-            if event.key == K_SPACE:
-                night *= -1
-
             if event.key == K_UP:
                 pressed_1 = True
             if event.key == K_LEFT:
@@ -185,6 +185,41 @@ while x == 1:
             if event.key == K_DOWN:
                 pressed_1_b = False
 
+    ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
+    data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
+                   f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, {ray_info}"
+    client_socket.sendall(data_to_send.encode())
+
+    # Check if there's data available to be received
+    readable, _, _ = select.select([client_socket], [], [], 0)
+    if readable:
+        data = client_socket.recv(1024)
+        if data:
+            action = int(data.decode())
+            print("Received action from server:", action)
+
+            # Based on the received action, perform the corresponding action in the game
+            if action == 0:  # Forward
+                pressed_1 = True
+                pressed_1_b = False
+                pressed_1_l = False
+                pressed_1_r = False
+            elif action == 1 :  # Backward
+                pressed_1 = False
+                pressed_1_b = True
+                pressed_1_l = False
+                pressed_1_r = False
+            elif action == 2:  # Left
+                pressed_1 = False
+                pressed_1_b = False
+                pressed_1_l = True
+                pressed_1_r = False
+            elif action == 3:  # Right
+                pressed_1 = False
+                pressed_1_b = False
+                pressed_1_l = False
+                pressed_1_r = True
+
     fenster.fill((0, 0, 0))
     fenster.blit(strecken[zaehler], (0, 0))
 
@@ -198,14 +233,14 @@ while x == 1:
 
             if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_fence:
                 destroy_1 = 1
-                boom = 1
+                lose = 1
 
             if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_finish:
                 destroy_1 = 1
+                win = 1
 
         except:
             destroy_1 = 1
-            boom = 1
 
         if destroy_1 == 0:
             fenster.blit(image_1_neu, player_1)
@@ -219,19 +254,16 @@ while x == 1:
     text_acceleration = font.render(f"Acceleration: {acceleration}", True, blue)
     text_brake = font.render(f"Brake: {brake}", True, blue)
     text_angle = font.render(f"Angle: {round(winkel_1, 2)}", True, blue)
-    text_boom = font.render(f"Boom: {round(boom, 2)}", True, blue)
-
-    # Send data to server
-    ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
-    data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
-                   f"Angle: {round(winkel_1, 2)}, Lose: {boom}, {ray_info}"
-    client_socket.sendall(data_to_send.encode())
+    text_lose = font.render(f"Lose: {round(lose, 2)}", True, blue)
+    text_finish = font.render(f"Finish distance: {round(finish_distance, 2)}", True, blue)
 
     fenster.blit(text_speed, (10, 10))
     fenster.blit(text_acceleration, (10, 50))
     fenster.blit(text_brake, (10, 90))
     fenster.blit(text_angle, (10, 130))
-    fenster.blit(text_boom, (10, 170))
+    fenster.blit(text_lose, (10, 170))
+    fenster.blit(text_lose, (10, 210))
+
 
     # Display ray distances and angles
     for i in range(RAY_COUNT):
@@ -243,14 +275,15 @@ while x == 1:
         # Display ray info
         ray_info = font.render(f"Ray {i + 1}: Angle = {round(winkel_1 + RAY_ANGLE_OFFSET * i, 2)}, "
                                f"Distance = {ray_distances[i]}", True, blue)
-        fenster.blit(ray_info, (10, 210 + 30 * i))
+        fenster.blit(ray_info, (10, 250 + 30 * i))
 
     if destroy_1 == 1:
         fenster.blit(explosion, player_1)
         pygame.display.update()
         destroy_1 = 0
         winkel_1 = 0
-        boom = 0
+        lose = 0
+        win = 0
         count_destr_1 = 25
 
     pygame.display.update()
