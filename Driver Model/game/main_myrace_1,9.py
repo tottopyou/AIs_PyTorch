@@ -38,7 +38,7 @@ shade.setup((7, 7, 7))
 
 strecken = []
 a = 1
-a_zaehler = 9
+a_zaehler = 10
 
 while a == 1:
     try:
@@ -50,6 +50,7 @@ while a == 1:
 c_straße = (100, 100, 100, 255)
 c_fence = (255, 5, 5, 255)
 c_finish = (255, 255, 5, 255)
+c_reward = (0, 255, 0, 255)
 
 zaehler = 0
 
@@ -76,6 +77,7 @@ acceleration = 0
 brake = 0
 lose = 0
 win = 0
+reward = 0
 
 # Define raycasting parameters
 RAY_COUNT = 8
@@ -187,7 +189,7 @@ while x == 1:
 
     ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
     data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
-                   f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, {ray_info}"
+                   f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, Reward: {reward}, {ray_info}"
     client_socket.sendall(data_to_send.encode())
 
     # Check if there's data available to be received
@@ -239,6 +241,11 @@ while x == 1:
                 destroy_1 = 1
                 win = 1
 
+            if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_reward:
+                reward = 1
+            else:
+                reward = 0
+
         except:
             destroy_1 = 1
 
@@ -248,21 +255,20 @@ while x == 1:
     else:
         fenster.blit(explosion, player_1)
 
-    # Display current speed, acceleration, brake, angle
     font = pygame.font.Font(None, 36)
     text_speed = font.render(f"Speed: {round(bew_zaehler_1, 2)}", True, blue)
     text_acceleration = font.render(f"Acceleration: {acceleration}", True, blue)
     text_brake = font.render(f"Brake: {brake}", True, blue)
     text_angle = font.render(f"Angle: {round(winkel_1, 2)}", True, blue)
     text_lose = font.render(f"Lose: {round(lose, 2)}", True, blue)
-    text_finish = font.render(f"Finish distance: {round(finish_distance, 2)}", True, blue)
+    text_reward = font.render(f"Reward: {round(reward, 2)}", True, blue)
 
     fenster.blit(text_speed, (10, 10))
     fenster.blit(text_acceleration, (10, 50))
     fenster.blit(text_brake, (10, 90))
     fenster.blit(text_angle, (10, 130))
     fenster.blit(text_lose, (10, 170))
-    fenster.blit(text_lose, (10, 210))
+    fenster.blit(text_reward, (10, 210))
 
 
     # Display ray distances and angles

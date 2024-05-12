@@ -53,6 +53,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             angle_pattern = r"Angle: ([\d.]+)"
             lose_pattern = r"Lose: ([\d.]+)"
             win_pattern = r"Win: ([\d.]+)"
+            reward_pattern = r"Reward: ([\d.]+)"
             ray_pattern = r"Ray (\d+): ([\d.]+)"
 
             # Extract values using regex
@@ -62,9 +63,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             angle = float(re.search(angle_pattern, data).group(1))
             lose = float(re.search(lose_pattern, data).group(1))
             win = float(re.search(win_pattern, data).group(1))
+            reward_line = float(re.search(reward_pattern, data).group(1))
             rays = [float(match.group(2)) for match in re.finditer(ray_pattern, data)]
 
-            tensor_data = torch.tensor([speed, acceleration, brake, angle, lose, win] + rays, dtype=torch.float32)
+            tensor_data = torch.tensor([speed, acceleration, brake, angle, lose, win, reward_line] + rays, dtype=torch.float32)
             return tensor_data
 
         learning_rate = 0.001
@@ -73,7 +75,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         batch_size = 32
         epoches = 1000
 
-        input_size = 14  # 6 original features + 8 rays
+        input_size = 15  # 7 original features + 8 rays
         output_size = 4  # 4 actions (forward, backward, left, right)
 
 
@@ -105,6 +107,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
             win = state[5].item()
             lose = state[4].item()
+            reward_line = state[6].item()
 
             for step in range(output_size):
                 if random.random() < epsilon:
@@ -130,10 +133,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
                 if win == 1:
                     reward = 100
+                elif reward_line == 1:
+                    reward = 10
                 elif lose == 1:
                     reward = -10
                 else:
-                    reward = 0
+                    reward = -0.1
 
                 memory.append((state, action, reward, observation))
 
