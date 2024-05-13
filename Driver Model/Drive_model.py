@@ -5,13 +5,17 @@ import torch.optim as optim
 import random
 import re
 import time
+import pickle
 
 # Define the server's IP address and port
 HOST = '127.0.0.1'  # localhost
 PORT = 65432  # Port to listen on
 
-MAX_ACTIONS_PER_SECOND = 60
+MAX_ACTIONS_PER_SECOND = 120
 MIN_ACTION_INTERVAL = 1 / MAX_ACTIONS_PER_SECOND
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print("Active device: ", device)
 
 # Create a socket object
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -28,9 +32,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
     with conn:
         print('Connected by', addr)
-
-        data = conn.recv(1024)
-        print("Received data:", data.decode())
         class DQN(nn.Module):
             def __init__(self, input_size, output_size):
                 super(DQN, self).__init__()
@@ -39,6 +40,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
                 self.fc3 = nn.Linear(32, output_size)
 
             def forward(self, x):
+                x = x.view(-1, 15)
                 x = torch.relu(self.fc1(x))
                 x = torch.relu(self.fc2(x))
                 x = self.fc3(x)
@@ -46,25 +48,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
         # Function to process data and create tensor
         def process_data(data):
-            # Define regex patterns
-            speed_pattern = r"Speed: ([\d.]+)"
-            acceleration_pattern = r"Acceleration: ([\d.]+)"
-            brake_pattern = r"Brake: ([\d.]+)"
-            angle_pattern = r"Angle: ([\d.]+)"
-            lose_pattern = r"Lose: ([\d.]+)"
-            win_pattern = r"Win: ([\d.]+)"
-            reward_pattern = r"Reward: ([\d.]+)"
-            ray_pattern = r"Ray (\d+): ([\d.]+)"
 
             # Extract values using regex
-            speed = float(re.search(speed_pattern, data).group(1))
-            acceleration = float(re.search(acceleration_pattern, data).group(1))
-            brake = float(re.search(brake_pattern, data).group(1))
-            angle = float(re.search(angle_pattern, data).group(1))
-            lose = float(re.search(lose_pattern, data).group(1))
-            win = float(re.search(win_pattern, data).group(1))
-            reward_line = float(re.search(reward_pattern, data).group(1))
-            rays = [float(match.group(2)) for match in re.finditer(ray_pattern, data)]
+            speed = float(data[0])
+            acceleration = float(data[1])
+            brake = float(data[2])
+            angle = float(data[3])
+            lose = float(data[4])
+            win = float(data[5])
+            reward_line = float(data[6])
+            rays = [float(data[i]) for i in range(7, len(data))]
 
             tensor_data = torch.tensor([speed, acceleration, brake, angle, lose, win, reward_line] + rays, dtype=torch.float32)
             return tensor_data
@@ -79,8 +72,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         output_size = 4  # 4 actions (forward, backward, left, right)
 
 
-        model = DQN(input_size, output_size)
-        target_model = DQN(input_size, output_size)
+        model = DQN(input_size, output_size).to(device)
+        target_model = DQN(input_size, output_size).to(device)
         target_model.load_state_dict(model.state_dict())
         target_model.eval()
 
@@ -98,7 +91,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
         for episode in range(epoches):
 
-            state = process_data(data.decode())
+            received_data = conn.recv(4096)
+            data = pickle.loads(received_data)
+
+            #print(data)
+            state = process_data(data).to(device)
+            #print(state)
 
             episode_reward = 0
             episode_loss = 0
@@ -108,6 +106,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             win = state[5].item()
             lose = state[4].item()
             reward_line = state[6].item()
+            speed = state[0].item()
 
             for step in range(output_size):
                 if random.random() < epsilon:
@@ -117,7 +116,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
                         q_values = model(state.unsqueeze(0))
                         action = torch.argmax(q_values).item()
 
-                print(action)
                 conn.sendall(str(action).encode())
 
                 time_passed = time.time() - last_action_time
@@ -129,16 +127,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
                 last_action_time = time.time()
 
-                observation = process_data(data.decode())
+                observation = process_data(data).to(device)
 
                 if win == 1:
-                    reward = 100
+                    print("Winer")
+                    reward = 1000
                 elif reward_line == 1:
-                    reward = 10
+                    print("Reward yepi")
+                    reward = 5
                 elif lose == 1:
+                    print("You are die")
+                    reward = -100
+                elif -1 < speed < 1:
                     reward = -10
                 else:
-                    reward = -0.1
+                    reward = 0
 
                 memory.append((state, action, reward, observation))
 
@@ -153,10 +156,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
                 states, actions, rewards, next_states = zip(*batch)
 
                 # Convert to tensors
-                states = torch.stack(states)
-                actions = torch.tensor(actions)
-                rewards = torch.tensor(rewards)
-                next_states = torch.stack(next_states)
+                states = torch.stack(states).to(device)
+                actions = torch.tensor(actions).to(device)
+                rewards = torch.tensor(rewards).to(device)
+                next_states = torch.stack(next_states).to(device)
 
                 q_values = model(states)
                 next_q_values = target_model(next_states)

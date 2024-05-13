@@ -6,6 +6,7 @@ from shader import *
 from pygame.locals import *
 import socket
 import select
+import pickle
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -38,7 +39,7 @@ shade.setup((7, 7, 7))
 
 strecken = []
 a = 1
-a_zaehler = 10
+a_zaehler = 11
 
 while a == 1:
     try:
@@ -187,10 +188,10 @@ while x == 1:
             if event.key == K_DOWN:
                 pressed_1_b = False
 
-    ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
-    data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
-                   f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, Reward: {reward}, {ray_info}"
-    client_socket.sendall(data_to_send.encode())
+    #ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
+    #data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
+    #               f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, Reward: {reward}, {ray_info} "
+
 
     # Check if there's data available to be received
     readable, _, _ = select.select([client_socket], [], [], 0)
@@ -198,7 +199,7 @@ while x == 1:
         data = client_socket.recv(1024)
         if data:
             action = int(data.decode())
-            print("Received action from server:", action)
+            #print("Received action from server:", action)
 
             # Based on the received action, perform the corresponding action in the game
             if action == 0:  # Forward
@@ -222,9 +223,8 @@ while x == 1:
                 pressed_1_l = False
                 pressed_1_r = True
 
-    fenster.fill((0, 0, 0))
+    fenster.fill((0, 0, 0))    
     fenster.blit(strecken[zaehler], (0, 0))
-
     if count_destr_1 == 0:
         try:
             if not fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_straße:
@@ -252,8 +252,13 @@ while x == 1:
         if destroy_1 == 0:
             fenster.blit(image_1_neu, player_1)
 
-    else:
-        fenster.blit(explosion, player_1)
+
+    ray_info =[round(dist, 2) for dist in ray_distances]
+    data_to_send = [round(bew_zaehler_1, 2), acceleration, brake, round(winkel_1, 2), lose, win, reward] + ray_info
+
+    #print(data_to_send)
+    data_bytes = pickle.dumps(data_to_send)
+    client_socket.sendall(data_bytes)
 
     font = pygame.font.Font(None, 36)
     text_speed = font.render(f"Speed: {round(bew_zaehler_1, 2)}", True, blue)
@@ -284,6 +289,7 @@ while x == 1:
         fenster.blit(ray_info, (10, 250 + 30 * i))
 
     if destroy_1 == 1:
+        time.sleep(0.1)
         fenster.blit(explosion, player_1)
         pygame.display.update()
         destroy_1 = 0
