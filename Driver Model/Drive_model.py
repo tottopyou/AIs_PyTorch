@@ -34,14 +34,14 @@ class DQN(nn.Module):
 # Function to process data and create tensor
 def process_data(data):
     # Extract values using regex
-    speed = float(data[0])
+    speed = float(data[0]) / 10.0
     acceleration = float(data[1])
     brake = float(data[2])
-    angle = float(data[3])
+    angle = float(data[3]) / 360.0
     lose = float(data[4])
     win = float(data[5])
     reward_line = float(data[6])
-    rays = [float(data[i]) for i in range(7, len(data))]
+    rays = [float(data[i] / 200.0) for i in range(7, len(data))]
 
     tensor_data = torch.tensor([speed, acceleration, brake, angle, lose, win, reward_line] + rays,
                                dtype=torch.float32)
@@ -53,7 +53,7 @@ epsilon = 0.1  # Epsilon-greedy exploration rate
 
 input_size = 31  # 7 original features + 8 rays
 output_size = 4 # 4 actions (forward, backward, left, right)
-epoches = 500000
+epoches = 1000000
 
 model = DQN(input_size, output_size).to(device)
 target_model = DQN(input_size, output_size).to(device)
@@ -64,7 +64,7 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 try:
-    model.load_state_dict(torch.load("dqn_model.pth"))
+    model.load_state_dict(torch.load("../dqn_model.pth"))
     target_model.load_state_dict(model.state_dict())
     print("Loaded previously saved model weights")
 except FileNotFoundError:
@@ -121,23 +121,23 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
             last_action_time = time.time()
 
-            observation = process_data(data).to(device)
+            observation = process_data(data).to(device)\
+
+            reward = 0
 
             if win == 1:
                 print("Winner")
-                reward = 2
-            elif lose == 1:
+                reward += 2
+            if lose == 1:
                 print("You are dead")
-                reward = -0.6
-            elif reward_line == 1:
+                reward += -0.6
+            if reward_line == 1 and speed > 0.5:
                 print("Reward yepi")
-                reward = 0.4
-            elif speed < 2:
-                reward = -0.01
-            elif speed > 4:
-                reward = 0.1
-            else:
-                reward = 0
+                reward += 0.4
+            if speed < 2:
+                reward += -0.05
+            if speed > 4:
+                reward += 0.1
 
             episode_reward += reward
 

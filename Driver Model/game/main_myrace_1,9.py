@@ -31,49 +31,47 @@ green = (0,255,0)
 ww = pygame.display.Info().current_w
 wh = pygame.display.Info().current_h
 
-fenster = pygame.display.set_mode((ww, wh))
+window = pygame.display.set_mode((ww, wh))
 pygame.display.set_caption("MyRace - [Space] to switch day/night")
-fenster.fill(bg)
+window.fill(bg)
 
-shade = shader(fenster)
+shade = shader(window)
 shade.setup((7, 7, 7))
 
-strecken = []
+stretch = []
 a = 1
-a_zaehler = 11
+track_v = 12
 
 while a == 1:
     try:
-        exec("strecken.append(pygame.image.load('tracks/track_" + str(a_zaehler) + ".png'))")
+        exec("stretch.append(pygame.image.load('tracks/track_" + str(track_v) + ".png'))")
     except:
         a = 0
-    a_zaehler += 1
+    track_v += 1
 
-c_straße = (100, 100, 100, 255)
 c_fence = (255, 5, 5, 255)
 c_finish = (255, 255, 5, 255)
 c_reward = (0, 255, 0, 255)
 
-zaehler = 0
+counter = 0
 
 player_1 = pygame.Rect(100, 165, 20, 20)
 image_1 = pygame.image.load("car_1.png")
 
 explosion = pygame.image.load("explosion.png")
 
-# Variables: Player 1
 pressed_1 = False
 pressed_1_l = False
 pressed_1_r = False
-pressed_1_b = False  # Back - Reverse
+pressed_1_b = False  
 
-bew_zaehler_1 = 0
-winkel_1 = 0
+counter_1 = 0
+angle_1 = 0
 destroy_1 = 0
 count_destr_1 = 0
 
 mvsp = 10
-winkel_ch = 4 / 8  # change angle
+angle_ch = 4 / 8  # change angle
 
 acceleration = 0
 brake = 0
@@ -100,43 +98,43 @@ while x == 1:
 
     # Player 1
     if count_destr_1 == 0:
-        if pressed_1 and bew_zaehler_1 < mvsp:
-            bew_zaehler_1 += 0.25
+        if pressed_1 and counter_1 < mvsp:
+            counter_1 += 0.25
             acceleration = 1
         else:
             acceleration = 0
 
         if pressed_1_b:
-            bew_zaehler_1 -= 0.25
+            counter_1 -= 0.25
             brake = 1
         else:
             brake = 0
 
-        if pressed_1_l and bew_zaehler_1 > 2:
-            winkel_1 -= winkel_ch * bew_zaehler_1
-        elif pressed_1_l and bew_zaehler_1 < -2:
-            winkel_1 -= winkel_ch * bew_zaehler_1
+        if pressed_1_l and counter_1 > 2:
+            angle_1 -= angle_ch * counter_1
+        elif pressed_1_l and counter_1 < -2:
+            angle_1 -= angle_ch * counter_1
 
-        if pressed_1_r and bew_zaehler_1 > 2:
-            winkel_1 += winkel_ch * bew_zaehler_1
-        elif pressed_1_r and bew_zaehler_1 < -2:
-            winkel_1 += winkel_ch * bew_zaehler_1
+        if pressed_1_r and counter_1 > 2:
+            angle_1 += angle_ch * counter_1
+        elif pressed_1_r and counter_1 < -2:
+            angle_1 += angle_ch * counter_1
 
-        if pressed_1 == False and bew_zaehler_1 > 0:
-            bew_zaehler_1 -= 0.25
-        if pressed_1_b == False and bew_zaehler_1 < 0:
-            bew_zaehler_1 += 0.25
+        if pressed_1 == False and counter_1 > 0:
+            counter_1 -= 0.25
+        if pressed_1_b == False and counter_1 < 0:
+            counter_1 += 0.25
 
-        b_1 = math.cos(math.radians(winkel_1)) * bew_zaehler_1
-        a_1 = math.sin(math.radians(winkel_1)) * bew_zaehler_1
+        b_1 = math.cos(math.radians(angle_1)) * counter_1
+        a_1 = math.sin(math.radians(angle_1)) * counter_1
         player_1.left += round(b_1)
         player_1.top += round(a_1)
 
-        image_1_neu = pygame.transform.rotate(image_1, winkel_1 * -1)
+        image_1_neu = pygame.transform.rotate(image_1, angle_1 * -1)
 
         # Raycasting
         for i in range(RAY_COUNT):
-            angle = math.radians(winkel_1 + RAY_ANGLE_OFFSET * i)
+            angle = math.radians(angle_1 + RAY_ANGLE_OFFSET * i)
             x1, y1 = player_1.center
             ray_distances[i] = RAY_LENGTH
             finish_distance[i] = 0
@@ -148,11 +146,11 @@ while x == 1:
                 if end_x < 0 or end_x >= ww or end_y < 0 or end_y >= wh:
                     break
 
-                if fenster.get_at((end_x, end_y)) == c_fence:
+                if window.get_at((end_x, end_y)) == c_fence:
                     ray_distances[i] = j
                     break
 
-                if fenster.get_at((end_x, end_y)) == c_finish:
+                if window.get_at((end_x, end_y)) == c_finish:
                     ray_distances[i] = j
                     finish_distance[i] = j
                     break
@@ -168,13 +166,13 @@ while x == 1:
                 x = 0
 
             if event.key == K_RETURN:
-                zaehler += 1
+                counter += 1
                 player_1.left = 100
                 player_1.top = 165
-                winkel_1 = 0
+                angle_1 = 0
 
-                if zaehler >= len(strecken):
-                    zaehler = 0
+                if counter >= len(stretch):
+                    counter = 0
 
             if event.key == K_UP:
                 pressed_1 = True
@@ -196,11 +194,10 @@ while x == 1:
                 pressed_1_b = False
 
     #ray_info = ", ".join([f"Ray {i + 1}: {round(dist, 2)}" for i, dist in enumerate(ray_distances)])
-    #data_to_send = f"Speed: {round(bew_zaehler_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
-    #               f"Angle: {round(winkel_1, 2)}, Lose: {lose}, Win: {win}, Reward: {reward}, {ray_info} "
+    #data_to_send = f"Speed: {round(counter_1, 2)}, Acceleration: {acceleration}, Brake: {brake}, " \
+    #               f"Angle: {round(angle_1, 2)}, Lose: {lose}, Win: {win}, Reward: {reward}, {ray_info} "
 
 
-    # Check if there's data available to be received
     readable, _, _ = select.select([client_socket], [], [], 0)
     if readable:
         data = client_socket.recv(1024)
@@ -208,7 +205,6 @@ while x == 1:
             action = int(data.decode())
             #print("Received action from server:", action)
 
-            # Based on the received action, perform the corresponding action in the game
             if action == 0:  # Forward
                 pressed_1 = True
                 pressed_1_b = False
@@ -230,20 +226,20 @@ while x == 1:
                 pressed_1_l = False
                 pressed_1_r = True
 
-    fenster.fill((0, 0, 0))    
-    fenster.blit(strecken[zaehler], (0, 0))
+    window.fill((0, 0, 0))    
+    window.blit(stretch[counter], (0, 0))
     if count_destr_1 == 0:
         try:
 
-            if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_fence:
+            if window.get_at((player_1.left + 10, player_1.top + 10)) == c_fence:
                 destroy_1 = 1
                 lose = 1
 
-            if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_finish:
+            if window.get_at((player_1.left + 10, player_1.top + 10)) == c_finish:
                 destroy_1 = 1
                 win = 1
 
-            if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_reward:
+            if window.get_at((player_1.left + 10, player_1.top + 10)) == c_reward:
                 reward = 1
             else:
                 reward = 0
@@ -252,36 +248,36 @@ while x == 1:
             destroy_1 = 1
 
         if destroy_1 == 0:
-            fenster.blit(image_1_neu, player_1)
+            window.blit(image_1_neu, player_1)
 
 
     ray_info =[round(dist, 2) for dist in ray_distances]
     ray_info_finish = [round(dist, 2) for dist in finish_distance]
-    data_to_send = [round(bew_zaehler_1, 2), acceleration, brake, round(winkel_1, 2), lose, win, reward] + ray_info + ray_info_finish
+    data_to_send = [round(counter_1, 2), acceleration, brake, round(angle_1, 2), lose, win, reward] + ray_info + ray_info_finish
 
     #print(data_to_send)
     data_bytes = pickle.dumps(data_to_send)
     client_socket.sendall(data_bytes)
 
     font = pygame.font.Font(None, 36)
-    text_speed = font.render(f"Speed: {round(bew_zaehler_1, 2)}", True, blue)
+    text_speed = font.render(f"Speed: {round(counter_1, 2)}", True, blue)
     text_acceleration = font.render(f"Acceleration: {acceleration}", True, blue)
     text_brake = font.render(f"Brake: {brake}", True, blue)
-    text_angle = font.render(f"Angle: {round(winkel_1, 2)}", True, blue)
+    text_angle = font.render(f"Angle: {round(angle_1, 2)}", True, blue)
     text_lose = font.render(f"Lose: {round(lose, 2)}", True, blue)
     text_reward = font.render(f"Reward: {round(reward, 2)}", True, blue)
 
-    fenster.blit(text_speed, (10, 10))
-    fenster.blit(text_acceleration, (10, 50))
-    fenster.blit(text_brake, (10, 90))
-    fenster.blit(text_angle, (10, 130))
-    fenster.blit(text_lose, (10, 170))
-    fenster.blit(text_reward, (10, 210))
+    window.blit(text_speed, (10, 10))
+    window.blit(text_acceleration, (10, 50))
+    window.blit(text_brake, (10, 90))
+    window.blit(text_angle, (10, 130))
+    window.blit(text_lose, (10, 170))
+    window.blit(text_reward, (10, 210))
 
 
     # Display ray distances and angles
     for i in range(RAY_COUNT):
-        angle = math.radians(winkel_1 + RAY_ANGLE_OFFSET * i)
+        angle = math.radians(angle_1 + RAY_ANGLE_OFFSET * i)
         end_x = player_1.centerx + ray_distances[i] * math.cos(angle)
         end_y = player_1.centery + ray_distances[i] * math.sin(angle)
 
@@ -290,20 +286,20 @@ while x == 1:
         else:
             draw_color = blue
 
-        pygame.draw.line(fenster, draw_color, player_1.center, (end_x, end_y), 2)
+        pygame.draw.line(window, draw_color, player_1.center, (end_x, end_y), 2)
 
         # Display ray info
-        ray_info = font.render(f"Ray {i + 1}: Angle = {round(winkel_1 + RAY_ANGLE_OFFSET * i, 2)}, "
+        ray_info = font.render(f"Ray {i + 1}: Angle = {round(angle_1 + RAY_ANGLE_OFFSET * i, 2)}, "
                                f"Wall Distance = {ray_distances[i]}, Finish Distance = {finish_distance[i]}", True,
                                draw_color)
-        fenster.blit(ray_info, (10, 250 + 30 * i))
+        window.blit(ray_info, (10, 250 + 30 * i))
 
     if destroy_1 == 1:
         time.sleep(0.1)
-        fenster.blit(explosion, player_1)
+        window.blit(explosion, player_1)
         pygame.display.update()
         destroy_1 = 0
-        winkel_1 = 0
+        angle_1 = 0
         lose = 0
         win = 0
         count_destr_1 = 25
