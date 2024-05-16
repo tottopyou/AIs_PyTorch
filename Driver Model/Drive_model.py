@@ -10,7 +10,7 @@ import pickle
 HOST = '127.0.0.1'  # localhost
 PORT = 65432  # Port to listen on
 
-MAX_ACTIONS_PER_SECOND = 120
+MAX_ACTIONS_PER_SECOND = 90
 MIN_ACTION_INTERVAL = 1 / MAX_ACTIONS_PER_SECOND
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -25,7 +25,7 @@ class DQN(nn.Module):
         self.fc3 = nn.Linear(32, output_size)
 
     def forward(self, x):
-        x = x.view(-1, 15)
+        x = x.view(-1, 31)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
@@ -51,7 +51,7 @@ learning_rate = 0.001
 gamma = 0.99  # Discount factor
 epsilon = 0.1  # Epsilon-greedy exploration rate
 
-input_size = 15  # 7 original features + 8 rays
+input_size = 31  # 7 original features + 8 rays
 output_size = 4 # 4 actions (forward, backward, left, right)
 epoches = 500000
 
@@ -125,7 +125,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
             if win == 1:
                 print("Winner")
-                reward = 1
+                reward = 2
             elif lose == 1:
                 print("You are dead")
                 reward = -0.6

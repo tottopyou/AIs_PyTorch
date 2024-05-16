@@ -26,6 +26,7 @@ pygame.init()
 bg = (255, 255, 255)
 red = (255, 0, 0)
 blue = (0, 0, 255)
+green = (0,255,0)
 
 ww = pygame.display.Info().current_w
 wh = pygame.display.Info().current_h
@@ -81,13 +82,14 @@ win = 0
 reward = 0
 
 # Define raycasting parameters
-RAY_COUNT = 8
-RAY_ANGLE_OFFSET = 45  # Initial angle offset
+RAY_COUNT = 12
+RAY_ANGLE_OFFSET = 30  # Initial angle offset
 RAY_LENGTH = 200  # Maximum length of ray
 ray_distances = [RAY_LENGTH] * RAY_COUNT
+finish_distance = [0] * RAY_COUNT
 
 clock = pygame.time.Clock()
-fps = 120
+fps = 90
 time_ = 0
 
 x = 1
@@ -137,6 +139,7 @@ while x == 1:
             angle = math.radians(winkel_1 + RAY_ANGLE_OFFSET * i)
             x1, y1 = player_1.center
             ray_distances[i] = RAY_LENGTH
+            finish_distance[i] = 0
 
             for j in range(RAY_LENGTH):
                 end_x = int(x1 + j * math.cos(angle))
@@ -149,6 +152,10 @@ while x == 1:
                     ray_distances[i] = j
                     break
 
+                if fenster.get_at((end_x, end_y)) == c_finish:
+                    ray_distances[i] = j
+                    finish_distance[i] = j
+                    break
     else:
         count_destr_1 -= 1
 
@@ -227,11 +234,6 @@ while x == 1:
     fenster.blit(strecken[zaehler], (0, 0))
     if count_destr_1 == 0:
         try:
-            if not fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_straße:
-                if bew_zaehler_1 > 3:
-                    bew_zaehler_1 = 2
-                if bew_zaehler_1 < -3:
-                    bew_zaehler_1 = -2
 
             if fenster.get_at((player_1.left + 10, player_1.top + 10)) == c_fence:
                 destroy_1 = 1
@@ -254,7 +256,8 @@ while x == 1:
 
 
     ray_info =[round(dist, 2) for dist in ray_distances]
-    data_to_send = [round(bew_zaehler_1, 2), acceleration, brake, round(winkel_1, 2), lose, win, reward] + ray_info
+    ray_info_finish = [round(dist, 2) for dist in finish_distance]
+    data_to_send = [round(bew_zaehler_1, 2), acceleration, brake, round(winkel_1, 2), lose, win, reward] + ray_info + ray_info_finish
 
     #print(data_to_send)
     data_bytes = pickle.dumps(data_to_send)
@@ -281,11 +284,18 @@ while x == 1:
         angle = math.radians(winkel_1 + RAY_ANGLE_OFFSET * i)
         end_x = player_1.centerx + ray_distances[i] * math.cos(angle)
         end_y = player_1.centery + ray_distances[i] * math.sin(angle)
-        pygame.draw.line(fenster, blue, player_1.center, (end_x, end_y), 2)
+
+        if finish_distance[i] > 0 :
+            draw_color = green
+        else:
+            draw_color = blue
+
+        pygame.draw.line(fenster, draw_color, player_1.center, (end_x, end_y), 2)
 
         # Display ray info
         ray_info = font.render(f"Ray {i + 1}: Angle = {round(winkel_1 + RAY_ANGLE_OFFSET * i, 2)}, "
-                               f"Distance = {ray_distances[i]}", True, blue)
+                               f"Wall Distance = {ray_distances[i]}, Finish Distance = {finish_distance[i]}", True,
+                               draw_color)
         fenster.blit(ray_info, (10, 250 + 30 * i))
 
     if destroy_1 == 1:
