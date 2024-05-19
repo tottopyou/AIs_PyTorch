@@ -40,7 +40,7 @@ shade.setup((7, 7, 7))
 
 stretch = []
 a = 1
-track_v = 12
+track_v = 11
 
 while a == 1:
     try:
@@ -63,7 +63,7 @@ explosion = pygame.image.load("explosion.png")
 pressed_1 = False
 pressed_1_l = False
 pressed_1_r = False
-pressed_1_b = False  
+pressed_1_b = False
 
 counter_1 = 0
 angle_1 = 0
@@ -87,7 +87,7 @@ ray_distances = [RAY_LENGTH] * RAY_COUNT
 finish_distance = [0] * RAY_COUNT
 
 clock = pygame.time.Clock()
-fps = 90
+fps = 120
 time_ = 0
 
 x = 1
@@ -200,19 +200,19 @@ while x == 1:
 
     readable, _, _ = select.select([client_socket], [], [], 0)
     if readable:
-        data = client_socket.recv(1024)
+        data = client_socket.recv(1)
         if data:
             action = int(data.decode())
             #print("Received action from server:", action)
 
-            if action == 0:  # Forward
-                pressed_1 = True
-                pressed_1_b = False
-                pressed_1_l = False
-                pressed_1_r = False
-            elif action == 1 :  # Backward
+            if action == 0:  # Backward
                 pressed_1 = False
                 pressed_1_b = True
+                pressed_1_l = False
+                pressed_1_r = False
+            elif action == 1 :  # Forward
+                pressed_1 = True
+                pressed_1_b = False
                 pressed_1_l = False
                 pressed_1_r = False
             elif action == 2:  # Left
@@ -226,7 +226,7 @@ while x == 1:
                 pressed_1_l = False
                 pressed_1_r = True
 
-    window.fill((0, 0, 0))    
+    window.fill((0, 0, 0))
     window.blit(stretch[counter], (0, 0))
     if count_destr_1 == 0:
         try:
