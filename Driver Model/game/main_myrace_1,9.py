@@ -40,7 +40,7 @@ shade.setup((7, 7, 7))
 
 stretch = []
 a = 1
-track_v = 11
+track_v = 8
 
 while a == 1:
     try:
@@ -296,6 +296,7 @@ while x == 1:
 
     if destroy_1 == 1:
         time.sleep(0.1)
+        counter_1 = 0
         window.blit(explosion, player_1)
         pygame.display.update()
         destroy_1 = 0
