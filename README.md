@@ -374,4 +374,56 @@ The model is trained on the COCO dataset, which contains a large collection of i
 ---
 # Driver Model
 
-## In process !
+## Overview
+This project implements a Reinforcement Learning (RL) model for a 2D racing game. The model is trained using Deep Q-Learning (DQN) and communicates with a game client via socket programming to receive game state information and send actions. The primary goal is to train an agent that can autonomously navigate and win a 2D racing game.
+
+## Model Architecture
+
+#### Deep Q-Network (DQN)
+```python
+class DQN(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(DQN, self).__init__()
+        self.fc1 = nn.Linear(input_size, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, output_size)
+
+    def forward(self, x):
+        x = x.view(-1, 31)
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+```
+
+## Training Loop
+
+#### Model Training: For each episode:
+
+1. Receive the game state from the client.
+2. Process the state and compute the action using an epsilon-greedy policy.
+3. Send the action back to the client.
+4. Calculate the reward based on the new state.
+5. Perform a gradient descent step to update the Q-network.
+6. Periodically update the target network to stabilize training.
+
+## Communication Protocol
+#### The server and client communicate via TCP sockets:
+
+Server: Listens for connections and processes incoming data.
+Client: Sends the current game state to the server and receives the action to execute.
+
+## Results 
+
+#### After running the model for several episodes, the agent showed some progress in learning how to navigate the game. However, there were notable challenges and limitations:
+
+1. Insufficient Training Epochs: Even after 1,000,000 epochs, the model's performance indicates that it may require more training to achieve a higher level of proficiency. The complexity of the game environment necessitates extended training to fully understand the dynamics and optimize strategies.
+
+2. Game Environment Issues: Certain aspects of the game environment, such as sensor data inaccuracies or delayed response times, might impact the agent's ability to learn effectively. These issues could lead to suboptimal actions and reduced rewards, affecting overall training efficiency.
+
+3. Exploration vs. Exploitation: The balance between exploration (trying new actions) and exploitation (choosing the best-known action) remains critical. Adjusting the epsilon-greedy policy over time might be necessary to enhance learning outcomes.
+   
+4. Hardware Limitations: Training on a CPU or a less powerful GPU could slow down the learning process significantly. Utilizing more advanced hardware might accelerate training and improve results.
+
+## Conclusion
+This project demonstrates the potential of using DQN for training an autonomous agent in a 2D racing game. Despite some promising results, further improvements and extended training are necessary to achieve optimal performance. Future work could focus on addressing the identified challenges, refining the model, and enhancing the game environment for better training outcomes.
