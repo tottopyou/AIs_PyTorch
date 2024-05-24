@@ -10,13 +10,12 @@ import pickle
 HOST = '127.0.0.1'  # localhost
 PORT = 65432  # Port to listen on
 
-MAX_ACTIONS_PER_SECOND = 90
+MAX_ACTIONS_PER_SECOND = 8
 MIN_ACTION_INTERVAL = 1 / MAX_ACTIONS_PER_SECOND
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Active device: ", device)
 
-# Define the neural network
 class DQN(nn.Module):
     def __init__(self, input_size, output_size):
         super(DQN, self).__init__()
@@ -31,7 +30,6 @@ class DQN(nn.Module):
         x = self.fc3(x)
         return x
 
-# Function to process data and create tensor
 def process_data(data):
     # Extract values using regex
     speed = float(data[0]) / 10.0
@@ -64,18 +62,16 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 try:
-    model.load_state_dict(torch.load("../dqn_model.pth"))
+    model.load_state_dict(torch.load("dqn_model.pth"))
     target_model.load_state_dict(model.state_dict())
     print("Loaded previously saved model weights")
 except FileNotFoundError:
     print("No saved model weights found")
 
-# Create a socket object
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-    # Bind the socket to the address and port
+
     server_socket.bind((HOST, PORT))
 
-    # Listen for incoming connections
     server_socket.listen()
 
     print("Server listening on", HOST, PORT)
@@ -121,29 +117,36 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
             last_action_time = time.time()
 
-            observation = process_data(data).to(device)\
+            observation = process_data(data).to(device)
 
             reward = 0
 
-            if win == 1:
-                print("Winner")
-                reward += 2
-            if lose == 1:
-                print("You are dead")
-                reward += -0.6
             if reward_line == 1 and speed > 0.5:
-                print("Reward yepi")
-                reward += 0.4
-            if speed < 2:
-                reward += -0.05
-            if speed > 4:
-                reward += 0.1
+                reward += 1
+
+            if speed <= 0:
+                reward += -1
+            elif speed < 1:
+                reward += -0.5
+            elif 1 <= speed < 3:
+                reward += 0.2
+            elif 3 <= speed < 5:
+                reward += 0.5
+            elif speed >= 5:
+                reward += 1
+
+            if lose == 1:
+                reward += -2
+                print("Lose")
+
+            if win == 1:
+                reward += 8
+                print("Winner")
 
             episode_reward += reward
 
             state = observation
 
-            # Train the model with the most recent transition
             state = state.unsqueeze(0).to(device)
             action = torch.tensor(action).unsqueeze(0).to(device)
             reward = torch.tensor(reward).unsqueeze(0).to(device)
@@ -167,6 +170,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
 
             print(f"Episode {episode + 1}: Total Reward = {episode_reward}, Average Loss = {episode_loss}")
 
-            # Save trained model weights
             if (episode + 1) % 100 == 0:
                 torch.save(model.state_dict(), "dqn_model.pth")
